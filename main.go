@@ -48,7 +48,6 @@ func main() {
 
 	ecrEndpoint = awsAccount + ".dkr.ecr." + awsRegion + ".amazonaws.com"
 
-	// Initialize the first token
 	if _, err := refreshECRToken(); err != nil {
 		log.Fatalf("Initial token refresh failed: %v", err)
 	}

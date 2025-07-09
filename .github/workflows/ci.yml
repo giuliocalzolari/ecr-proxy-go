@@ -33,9 +33,6 @@ jobs:
           docker build -t ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA .
           docker image list | grep $GITHUB_REPOSITORY
 
-      - name: debug
-        run: |
-          ls -lah .
 
       - name: release
         if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
