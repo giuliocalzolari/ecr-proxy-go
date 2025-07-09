@@ -16,6 +16,7 @@
 .vscode/*
 
 # Other
+release_description.md
 coverage.html
 vendor/
 server.crt
