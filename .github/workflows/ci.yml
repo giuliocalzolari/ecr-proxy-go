@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - master
-    types: [opened, synchronize, closed]
 
 permissions:
   id-token: write
@@ -35,7 +34,7 @@ jobs:
 
 
       - name: release
-        if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
+        if: github.event.pull_request.merged == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
