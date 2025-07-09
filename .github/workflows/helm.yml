@@ -51,6 +51,8 @@ jobs:
           REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
           echo '${{ secrets.GITHUB_TOKEN }}' | helm registry login -u '${{ github.actor }}' --password-stdin 'ghcr.io'
           helm package chart --version "${IMAGEVERSION}" --app-version "${IMAGEVERSION}"
+          ls -la .
+          echo "Pushing helm chart ${REPO_NAME}-${IMAGEVERSION}.tgz to ghcr.io/${GITHUB_REPOSITORY}"
           helm push "${REPO_NAME}-${IMAGEVERSION}.tgz" "oci://${GITHUB_REPOSITORY}"
 
 
