@@ -1,0 +1,36 @@
+{{ template "chart.header" . }}
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.homepageLine" . }}
+
+## How to install this chart
+
+A simple install with default values:
+
+```console
+helm install my-release oci://ghcr.io/giuliocalzolari/{{ template "chart.name" . }}
+```
+
+To install with some set values:
+
+```console
+helm install my-release oci://ghcr.io/giuliocalzolari/{{ template "chart.name" . }} --set values_key1=value1 --set values_key2=value2
+```
+
+To install with custom values file:
+
+```console
+helm install my-release oci://ghcr.io/giuliocalzolari/{{ template "chart.name" . }} -f values.yaml
+```
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "chart.maintainersSection" . }}
