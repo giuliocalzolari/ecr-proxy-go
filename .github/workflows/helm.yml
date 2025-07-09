@@ -47,14 +47,16 @@ jobs:
           .github/scripts/validate.sh
 
       - name: release
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
           CHART_NAME=$(grep "name:" chart/Chart.yaml | sed 's/name: //')
           echo '${{ secrets.GITHUB_TOKEN }}' | helm registry login -u '${{ github.actor }}' --password-stdin 'ghcr.io'
           helm package chart --version "${IMAGEVERSION}" --app-version "${IMAGEVERSION}"
           ls -la .
-          echo "Pushing helm chart ${CHART_NAME}-${IMAGEVERSION}.tgz to ghcr.io/${GITHUB_REPOSITORY}"
-          helm push "${CHART_NAME}-${IMAGEVERSION}.tgz" "oci://${GITHUB_REPOSITORY}"
+          echo "Pushing helm chart ${CHART_NAME}-${IMAGEVERSION}.tgz to oci://ghcr.io/${REPOSITORY_OWNER}"
+          helm push "${CHART_NAME}-${IMAGEVERSION}.tgz" "oci://ghcr.io/${REPOSITORY_OWNER}"
 
 
 
