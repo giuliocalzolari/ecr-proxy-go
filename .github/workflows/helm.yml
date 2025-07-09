@@ -37,6 +37,11 @@ jobs:
             --lint-conf ./.github/configs/lintconf.yaml \
             --target-branch ${{ github.event.pull_request.base.ref }}
 
+      - name: Run kubeconform
+        run: |
+          helm plugin install https://github.com/melmorabity/helm-kubeconform
+          helm kubeconform chart --verbose --summary --strict --exit-on-error
+
       - name: validate
         run: |
           .github/scripts/validate.sh
