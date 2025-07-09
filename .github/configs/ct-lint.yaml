@@ -1,0 +1,13 @@
+remote: origin
+target-branch: master
+chart-dirs:
+- "."
+helm-extra-args: "--timeout 600s"
+helm-dependency-extra-args: ["--repository-config", "./umbrella-charts/repositories.yaml"]
+validate-chart-schema: true
+validate-chart-values: true
+validate-maintainers: false
+check-version-increment: false
+validate-yaml: true
+exclude-deprecated: true
+
