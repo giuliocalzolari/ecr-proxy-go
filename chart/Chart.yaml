@@ -1,6 +1,6 @@
 name: ecr-proxy-helm
 apiVersion: v1
-version: 0.0.1
+version: 0.0.0 # automatically set by the ci/cd
 appVersion: 0.0.0 # automatically set by the ci/cd
 description: A proxy for ECR that handles authentication and caching
 keywords:

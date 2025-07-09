@@ -47,7 +47,7 @@ jobs:
           .github/scripts/validate.sh
 
       - name: release
-        # if: github.event.pull_request.merged == true
+        if: github.event.pull_request.merged == true
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
