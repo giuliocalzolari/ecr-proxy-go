@@ -55,9 +55,8 @@ jobs:
           CHART_NAME="$(grep "name:" chart/Chart.yaml | sed 's/name: //')"
           echo '${{ secrets.GITHUB_TOKEN }}' | helm registry login -u '${{ github.actor }}' --password-stdin 'ghcr.io'
           helm package chart --version "${IMAGEVERSION}" --app-version "${IMAGEVERSION}"
-          mv "${CHART_NAME}-${IMAGEVERSION}.tgz" "${CHART_NAME}-${IMAGEVERSION}-helm.tgz"
-          echo "Pushing helm chart ${CHART_NAME}-${IMAGEVERSION}-helm.tgz to oci://ghcr.io/${REPOSITORY_OWNER}"
-          helm push "${CHART_NAME}-${IMAGEVERSION}-helm.tgz" "oci://ghcr.io/${REPOSITORY_OWNER}"
+          echo "Pushing helm chart ${CHART_NAME}-${IMAGEVERSION}.tgz to oci://ghcr.io/${REPOSITORY_OWNER}"
+          helm push "${CHART_NAME}-${IMAGEVERSION}.tgz" "oci://ghcr.io/${REPOSITORY_OWNER}"
 
 
 
