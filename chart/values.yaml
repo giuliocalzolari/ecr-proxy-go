@@ -3,22 +3,13 @@ replicaCount: 1
 extraEnvVars: []
   # - name: MY_ENV_VAR
   #   value: my-value
-rbac:
-  ## If true, create & use RBAC resources
-  create: true
-  ## Ignored if rbac.create is true
-  serviceAccountName: default
-  extraRules: []
-   # - apiGroups:
-   #     - argoproj.io
-   #   resources:
-   #     - rollouts
-   #   verbs:
-   #     - get
-   #     - watch
-   #     - list
-   #     - update
-   #     - patch
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # The name of the service account to use.
+  name: "ecr-proxy"
+  annotations: {}
 
 image:
   repository: ghcr.io/giuliocalzolari/ecr-proxy-go
@@ -36,10 +27,49 @@ resources:
     cpu: 150m
     memory: 256Mi
 
-securityContext: {}
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+service:
+  type: ClusterIP
+  port: 5000
+  name: ecr-proxy
+  annotations: {}
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  ingressClassName:
+  hosts:
+    - host: chart-example.local
+      paths:
+        - /
+
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+securityContext:
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+
+podSecurityContext:
+  fsGroupChangePolicy: Always
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+
 
 extraLabels: {}
 
