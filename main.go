@@ -44,7 +44,7 @@ func main() {
 	cfg := sysConfig{}
 	ctx := context.Background()
 	if err := envconfig.Process(ctx, &cfg); err != nil {
-		log.Fatal("%v", err)
+		log.Fatalf("%v", err)
 	}
 	if cfg.Target != "" {
 		ecrEndpoint = cfg.Target
