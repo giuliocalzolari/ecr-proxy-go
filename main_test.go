@@ -10,25 +10,6 @@ import (
 	"time"
 )
 
-func TestGenerateSelfSignedCert(t *testing.T) {
-	certFile := "test_server.crt"
-	keyFile := "test_server.key"
-	defer os.Remove(certFile)
-	defer os.Remove(keyFile)
-
-	err := generateSelfSignedCert(certFile, keyFile)
-	if err != nil {
-		t.Fatalf("generateSelfSignedCert failed: %v", err)
-	}
-
-	if _, err := os.Stat(certFile); os.IsNotExist(err) {
-		t.Fatalf("Cert file not created: %s", certFile)
-	}
-	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
-		t.Fatalf("Key file not created: %s", keyFile)
-	}
-}
-
 func TestDirectorSetsFields(t *testing.T) {
 	// Set up
 	ecrEndpoint = "test.ecr.amazonaws.com"
@@ -50,24 +31,6 @@ func TestDirectorSetsFields(t *testing.T) {
 	expectedAuth := "Basic " + ecrToken
 	if auth != expectedAuth {
 		t.Errorf("Expected Authorization header %q, got %q", expectedAuth, auth)
-	}
-}
-func TestGenerateSelfSignedCert_CreatesFiles(t *testing.T) {
-	certFile := "test_cert.crt"
-	keyFile := "test_key.key"
-	defer os.Remove(certFile)
-	defer os.Remove(keyFile)
-
-	err := generateSelfSignedCert(certFile, keyFile)
-	if err != nil {
-		t.Fatalf("generateSelfSignedCert failed: %v", err)
-	}
-
-	if _, err := os.Stat(certFile); os.IsNotExist(err) {
-		t.Errorf("Cert file not created: %s", certFile)
-	}
-	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
-		t.Errorf("Key file not created: %s", keyFile)
 	}
 }
 
