@@ -27,20 +27,32 @@ helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -f values.y
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
+| autoscaling.enabled | bool | `false` | Enable replica autoscaling settings |
+| autoscaling.maxReplicas | int | `11` | Maximum replicas for the pod autoscaling |
+| autoscaling.minReplicas | int | `1` | Minimum replicas for the pod autoscaling |
+| autoscaling.targetCPU | string | `"80"` | Percentage of CPU to consider when autoscaling |
+| autoscaling.targetMemory | string | `""` | Percentage of Memory to consider when autoscaling |
+| containerSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
+| containerSecurityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| containerSecurityContext.readOnlyRootFilesystem | bool | `true` |  |
+| containerSecurityContext.runAsNonRoot | bool | `true` |  |
+| containerSecurityContext.runAsUser | int | `1000` |  |
+| containerSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | extraEnvVars | list | `[]` |  |
 | extraLabels | object | `{}` |  |
 | fullnameOverride | string | `""` |  |
-| image.args | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/giuliocalzolari/ecr-proxy-go"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.enabled | bool | `false` |  |
-| ingress.hosts[0].host | string | `"chart-example.local"` |  |
-| ingress.hosts[0].paths[0] | string | `"/"` |  |
-| ingress.ingressClassName | string | `nil` |  |
-| ingress.tls | list | `[]` |  |
+| ingress.existingSecret | string | `""` |  |
+| ingress.hostname | string | `"chart-example.local"` |  |
+| ingress.ingressClassName | string | `"nginx"` |  |
+| ingress.path | string | `"/"` |  |
+| ingress.pathType | string | `"Prefix"` |  |
+| ingress.tls | bool | `true` |  |
 | ipWhitelist | list | `[]` |  |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
@@ -55,12 +67,6 @@ helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -f values.y
 | resources.limits.memory | string | `"1Gi"` |  |
 | resources.requests.cpu | string | `"150m"` |  |
 | resources.requests.memory | string | `"256Mi"` |  |
-| securityContext.allowPrivilegeEscalation | bool | `false` |  |
-| securityContext.capabilities.drop[0] | string | `"ALL"` |  |
-| securityContext.readOnlyRootFilesystem | bool | `true` |  |
-| securityContext.runAsNonRoot | bool | `true` |  |
-| securityContext.runAsUser | int | `1000` |  |
-| securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | service.annotations | object | `{}` |  |
 | service.name | string | `"ecr-proxy"` |  |
 | service.port | int | `5000` |  |
@@ -69,4 +75,5 @@ helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -f values.y
 | serviceAccount.create | bool | `false` |  |
 | serviceAccount.name | string | `"ecr-proxy"` |  |
 | tolerations | list | `[]` |  |
+| topologySpreadConstraints | list | `[]` |  |
 

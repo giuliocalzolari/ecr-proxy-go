@@ -2,6 +2,11 @@
 
 All notable changes are documented in this file
 
+## 0.0.8
+
+- helm unittest
+- add hpa
+
 ## 0.0.7
 
 - file restructure

@@ -1,16 +1,10 @@
 
 replicaCount: 1
 extraEnvVars: []
-  # - name: MY_ENV_VAR
-  #   value: my-value
-
 ipWhitelist: []
-  # -
 
 serviceAccount:
-  # Specifies whether a service account should be created
   create: false
-  # The name of the service account to use.
   name: "ecr-proxy"
   annotations: {}
 
@@ -19,8 +13,6 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
   pullPolicy: IfNotPresent
-  args: []
-    # - --include-resources=deployments,cronjobs
 
 resources:
   limits:
@@ -46,7 +38,7 @@ ingress:
   tls: true
   existingSecret: ""
 
-securityContext:
+containerSecurityContext:
   readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 1000
@@ -68,6 +60,18 @@ podSecurityContext:
 
 extraLabels: {}
 
+autoscaling:
+  # -- Enable replica autoscaling settings
+  enabled: false
+  # -- Minimum replicas for the pod autoscaling
+  minReplicas: 1
+  # -- Maximum replicas for the pod autoscaling
+  maxReplicas: 11
+  # -- Percentage of CPU to consider when autoscaling
+  targetCPU: "80"
+  # -- Percentage of Memory to consider when autoscaling
+  targetMemory: ""
+
 
 imagePullSecrets: []
 nameOverride: ""
@@ -75,4 +79,5 @@ fullnameOverride: ""
 nodeSelector: {}
 tolerations: []
 affinity: {}
+topologySpreadConstraints: []
 priorityClassName: ""

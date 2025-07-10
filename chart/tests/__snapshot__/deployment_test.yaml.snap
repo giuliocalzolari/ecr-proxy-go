@@ -1,0 +1,107 @@
+manifest should match snapshot:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: ecr-proxy-helm
+        app.kubernetes.io/version: 0.0.0
+        helm.sh/chart: ecr-proxy-helm-1.2.3
+      name: ecr-proxy-helm
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: RELEASE-NAME
+          app.kubernetes.io/name: ecr-proxy-helm
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: ecr-proxy-helm
+            app.kubernetes.io/version: 0.0.0
+            helm.sh/chart: ecr-proxy-helm-1.2.3
+        spec:
+          containers:
+            - env:
+                - name: MY_POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: MY_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: MY_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: MY_NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                - name: TLS_CERT_FILE
+                  value: /app/tls/tls.crt
+                - name: TLS_KEY_FILE
+                  value: /app/tls/tls.key
+              image: ghcr.io/giuliocalzolari/ecr-proxy-go:0.0.0
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /v2/
+                  port: 5000
+                  scheme: HTTPS
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                timeoutSeconds: 2
+              name: app
+              ports:
+                - containerPort: 5000
+                  name: app
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: 5000
+                  scheme: HTTPS
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                timeoutSeconds: 2
+              resources:
+                limits:
+                  cpu: 1
+                  memory: 1Gi
+                requests:
+                  cpu: 150m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 1000
+                seccompProfile:
+                  type: RuntimeDefault
+              volumeMounts:
+                - mountPath: /app/tls
+                  name: tls
+                  readOnly: true
+          securityContext:
+            fsGroup: 1000
+            fsGroupChangePolicy: Always
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          serviceAccountName: default
+          volumes:
+            - name: tls
+              secret:
+                secretName: ecr-proxy-helm-tls
