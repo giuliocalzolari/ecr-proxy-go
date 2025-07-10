@@ -4,11 +4,11 @@ on:
   pull_request:
     branches:
       - master
+    types: [opened, synchronize, closed]
 
 permissions:
   id-token: write
   packages: write
-  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
