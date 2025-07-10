@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 const (
@@ -37,18 +38,46 @@ var (
 
 func main() {
 	// Load configuration
-	awsRegion = os.Getenv("AWS_REGION")
-	if awsRegion == "" {
-		awsRegion = "us-east-1" // Default region if not set
-		log.Printf("AWS_REGION not set, using default: %s", awsRegion)
-	}
+	ecrTarget := os.Getenv("ECR_TARGET")
+	if ecrTarget != "" {
+		ecrEndpoint = ecrTarget
+		// Try to extract region from ECR_TARGET if possible
+		parts := strings.Split(ecrTarget, ".")
+		// ECR endpoint format: <account>.dkr.ecr.<region>.amazonaws.com
+		if len(parts) >= 6 && parts[2] == "ecr" {
+			awsRegion = parts[3]
+			awsAccount = parts[0]
+			log.Printf("Using ECR_TARGET: %s, AWS Region: %s, AWS Account: %s", ecrEndpoint, awsRegion, awsAccount)
+		} else {
+			log.Fatalf("Invalid ECR_TARGET format: %s", ecrTarget)
+		}
 
-	awsAccount = os.Getenv("AWS_ACCOUNT_ID")
-	if awsAccount == "" {
-		log.Fatal("AWS_ACCOUNT_ID environment variable is required")
-	}
+	} else {
+		awsRegion = os.Getenv("AWS_REGION")
+		if awsRegion == "" {
+			awsRegion = "us-east-1" // Default region if not set
+			log.Printf("AWS_REGION not set, using default: %s", awsRegion)
+		}
 
-	ecrEndpoint = awsAccount + ".dkr.ecr." + awsRegion + ".amazonaws.com"
+		awsAccount = os.Getenv("AWS_ACCOUNT_ID")
+		if awsAccount == "" {
+			// Try to get AWS account ID from STS if not set
+			sess, err := session.NewSession(&aws.Config{
+				Region: aws.String(awsRegion),
+			})
+			if err != nil {
+				log.Fatalf("Failed to create AWS session: %v", err)
+			}
+			stsSvc := sts.New(sess)
+			idResp, err := stsSvc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+			if err != nil || idResp.Account == nil {
+				log.Fatal("AWS_ACCOUNT_ID environment variable is required and could not be determined via STS")
+			}
+			awsAccount = *idResp.Account
+			log.Printf("AWS_ACCOUNT_ID not set, using value from STS: %s", awsAccount)
+		}
+		ecrEndpoint = awsAccount + ".dkr.ecr." + awsRegion + ".amazonaws.com"
+	}
 
 	if _, err := refreshECRToken(); err != nil {
 		log.Fatalf("Initial token refresh failed: %v", err)
@@ -90,7 +119,7 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Get request: %s %s", r.Method, r.URL.Path)
+		// log.Printf("Get request: %s %s", r.Method, r.URL.Path)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("AWS ECR Proxy is running\n"))
 	})

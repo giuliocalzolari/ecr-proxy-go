@@ -31,15 +31,42 @@ docker run -d \
     ghcr.io/giuliocalzolari/ecr-proxy-go:latest
 ```
 
-## Configuration
+## Kube Deployment
+
+Use [AWS IRSA](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html) with the following permission
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:GetRepositoryPolicy",
+                "ecr:DescribeRepositories",
+                "ecr:ListImages",
+                "ecr:BatchGetImage",
+                "sts:GetCallerIdentity"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        }
+    ]
+}
+```
+
+install everything with
+
+```
+helm install ecr-proxy oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -n ecr-proxy --create-namespace --debug -f chart/values-example.yaml
+```
 
 Set the following environment variables:
 
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION`
 - `AWS_ACCOUNT_ID`
 
 ## License
 
-MIT License
+[WTFPL](LICENSE)
