@@ -1,7 +1,5 @@
 # ecr-proxy-helm
 
-![Version: 0.0.1](https://img.shields.io/badge/Version-0.0.1-informational?style=flat-square)
-
 A proxy for ECR that handles authentication and caching
 
 ## How to install this chart
@@ -37,17 +35,38 @@ helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -f values.y
 | image.repository | string | `"ghcr.io/giuliocalzolari/ecr-proxy-go"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` |  |
+| ingress.annotations | object | `{}` |  |
+| ingress.enabled | bool | `false` |  |
+| ingress.hosts[0].host | string | `"chart-example.local"` |  |
+| ingress.hosts[0].paths[0] | string | `"/"` |  |
+| ingress.ingressClassName | string | `nil` |  |
+| ingress.tls | list | `[]` |  |
+| ipWhitelist | list | `[]` |  |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
+| podSecurityContext.fsGroup | int | `1000` |  |
+| podSecurityContext.fsGroupChangePolicy | string | `"Always"` |  |
+| podSecurityContext.runAsNonRoot | bool | `true` |  |
+| podSecurityContext.runAsUser | int | `1000` |  |
+| podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | priorityClassName | string | `""` |  |
-| rbac.create | bool | `true` |  |
-| rbac.extraRules | list | `[]` |  |
-| rbac.serviceAccountName | string | `"default"` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.cpu | int | `1` |  |
 | resources.limits.memory | string | `"1Gi"` |  |
 | resources.requests.cpu | string | `"150m"` |  |
 | resources.requests.memory | string | `"256Mi"` |  |
-| securityContext | object | `{}` |  |
+| securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| securityContext.runAsNonRoot | bool | `true` |  |
+| securityContext.runAsUser | int | `1000` |  |
+| securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| service.annotations | object | `{}` |  |
+| service.name | string | `"ecr-proxy"` |  |
+| service.port | int | `5000` |  |
+| service.type | string | `"ClusterIP"` |  |
+| serviceAccount.annotations | object | `{}` |  |
+| serviceAccount.create | bool | `false` |  |
+| serviceAccount.name | string | `"ecr-proxy"` |  |
 | tolerations | list | `[]` |  |
 
