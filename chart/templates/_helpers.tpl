@@ -30,16 +30,6 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{/*
-Return the appropriate apiVersion for RBAC APIs.
-*/}}
-{{- define "rbac.apiVersion" -}}
-{{- if semverCompare "^1.8-0" .Capabilities.KubeVersion.GitVersion -}}
-"rbac.authorization.k8s.io/v1"
-{{- else -}}
-"rbac.authorization.k8s.io/v1beta1"
-{{- end -}}
-{{- end -}}
 
 {{/*
 Common labels
@@ -53,3 +43,18 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "ecr-proxy.serviceAccountName" -}}
+{{ if .Values.serviceAccount.create -}}
+{{- coalesce .Values.serviceAccount.name "default" -}}
+{{- else -}}
+{{- "default" -}}
+{{- end -}}
+{{- end -}}
+
+

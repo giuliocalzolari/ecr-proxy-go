@@ -1,1 +1,45 @@
 # ecr-proxy
+
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ecr-proxy)](https://artifacthub.io/packages/search?repo=ecr-proxy)
+
+## Overview
+
+**ecr-proxy** is a lightweight proxy service that enables seamless access to AWS ECR (Elastic Container Registry) images from environments where direct ECR access is restricted or inconvenient.
+
+## Features
+
+- Simple deployment as a container or binary
+- Supports authentication with AWS ECR
+- Transparent proxying of Docker image pulls and pushes
+- Minimal configuration required
+
+## Usage
+
+1. Deploy `ecr-proxy` in your environment (e.g., Kubernetes, Docker).
+2. Configure your Docker client or CI/CD pipeline to use the proxy as the registry endpoint.
+3. Pull or push images as you would with any Docker registry.
+
+## Example
+
+```sh
+docker run -d \
+    -e AWS_ACCESS_KEY_ID=your-access-key \
+    -e AWS_SECRET_ACCESS_KEY=your-secret-key \
+    -e AWS_ACCOUNT_ID=1234567890 \
+    -e AWS_REGION=us-west-1 \
+    -p 5000:5000 \
+    ghcr.io/giuliocalzolari/ecr-proxy-go:latest
+```
+
+## Configuration
+
+Set the following environment variables:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_ACCOUNT_ID`
+
+## License
+
+MIT License

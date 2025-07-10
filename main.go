@@ -58,10 +58,7 @@ func main() {
 	proxy.Director = director
 
 	// Get port from environment or use default
-	port := os.Getenv("PROXY_PORT")
-	if port == "" {
-		port = defaultPort
-	}
+	port := defaultPort
 
 	// Set up routes
 	http.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
