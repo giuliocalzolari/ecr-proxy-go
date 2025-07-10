@@ -4,6 +4,9 @@ extraEnvVars: []
   # - name: MY_ENV_VAR
   #   value: my-value
 
+ipWhitelist: []
+  # -
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: false

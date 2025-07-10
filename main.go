@@ -9,10 +9,12 @@ import (
 	"encoding/pem"
 	"log"
 	"math/big"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -62,6 +64,17 @@ func main() {
 
 	// Set up routes
 	http.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
+		// Check IP whitelist if set
+		ipWhitelist := os.Getenv("IP_WHITELIST")
+		if ipWhitelist != "" {
+			allowed := isIPAllowed(r.RemoteAddr, ipWhitelist)
+			if !allowed {
+				log.Printf("Denied request from IP %s (not in whitelist)", r.RemoteAddr)
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+		}
+
 		log.Printf("Proxying request: %s %s", r.Method, r.URL.Path)
 		// Refresh token if needed
 		if time.Now().After(tokenExpiry) {
@@ -101,6 +114,70 @@ func main() {
 
 	log.Printf("Starting HTTPS ECR proxy on port %s for %s", port, ecrEndpoint)
 	log.Fatal(http.ListenAndServeTLS(":"+port, certFile, keyFile, nil))
+}
+
+func isIPAllowed(remoteAddr, ipWhitelist string) bool {
+	// Split the whitelist into individual CIDRs or IPs
+	whitelist := splitAndTrim(ipWhitelist, ",")
+	var ipNets []*net.IPNet
+
+	for _, entry := range whitelist {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		// If entry is a plain IP, convert to /32 or /128 CIDR
+		if !strings.Contains(entry, "/") {
+			if strings.Contains(entry, ":") {
+				entry += "/128"
+			} else {
+				entry += "/32"
+			}
+		}
+		_, ipnet, err := net.ParseCIDR(entry)
+		if err == nil {
+			ipNets = append(ipNets, ipnet)
+		}
+	}
+
+	// Extract the IP from the remote address, handle [::1]:port and IPv4:port
+	ipStr := remoteAddr
+	if strings.HasPrefix(ipStr, "[") {
+		// IPv6 in [::1]:port format
+		if end := strings.LastIndex(ipStr, "]"); end != -1 {
+			ipStr = ipStr[1:end]
+		}
+	} else if colonIndex := strings.LastIndex(ipStr, ":"); colonIndex != -1 {
+		ipStr = ipStr[:colonIndex]
+	}
+	ip := net.ParseIP(strings.TrimSpace(ipStr))
+	if ip == nil {
+		log.Printf("Failed to parse IP from remoteAddr: %s", remoteAddr)
+		return false
+	}
+
+	// Check if the IP is in any of the allowed subnets
+	for _, ipnet := range ipNets {
+		if ipnet.Contains(ip) {
+			return true
+		}
+	}
+
+	log.Printf("IP %s is not in the whitelist", ip)
+	return false
+}
+
+// splitAndTrim splits a string by the given separator and trims whitespace from each element.
+func splitAndTrim(s, sep string) []string {
+	parts := strings.Split(s, sep)
+	var result []string
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
 
 func generateSelfSignedCert(certFile, keyFile string) error {
