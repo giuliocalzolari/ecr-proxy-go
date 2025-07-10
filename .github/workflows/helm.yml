@@ -42,6 +42,11 @@ jobs:
           helm plugin install https://github.com/melmorabity/helm-kubeconform
           helm kubeconform chart --verbose --summary --strict --exit-on-error
 
+      - name: Run helm unit tests
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest
+          helm unittest chart
+
       - name: validate
         run: |
           .github/scripts/validate.sh

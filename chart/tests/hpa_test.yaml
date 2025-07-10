@@ -1,0 +1,50 @@
+suite: test HPA
+templates:
+- hpa.yaml
+tests:
+- it: manifest should match snapshot
+  chart:
+    version: 1.2.3
+  set:
+    autoscaling:
+      enabled: true
+  asserts:
+  - matchSnapshot: {}
+
+
+- it: should disable hpa
+  set:
+    autoscaling:
+      enabled: false
+  asserts:
+  - hasDocuments:
+      count: 0
+
+
+- it: should set minReplicas
+  set:
+    autoscaling:
+      enabled: true
+      minReplicas: 42
+      maxReplicas: 43
+      targetCPU: 42
+  asserts:
+  - equal:
+      path: spec.minReplicas
+      value: 42
+  - equal:
+      path: spec.maxReplicas
+      value: 43
+  - contains:
+      path: spec.metrics
+      content:
+        resource:
+          name: cpu
+          target:
+            averageUtilization: 42
+            type: Utilization
+        type: Resource
+
+
+
+

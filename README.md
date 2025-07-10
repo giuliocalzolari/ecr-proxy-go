@@ -60,12 +60,9 @@ Use [AWS IRSA](https://docs.aws.amazon.com/eks/latest/userguide/associate-servic
 install everything with
 
 ```
-helm install ecr-proxy oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -n ecr-proxy --create-namespace --debug -f chart/values-example.yaml
+helm upgrade --install ecr-proxy oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -n ecr-proxy --create-namespace --debug -f chart/values-example.yaml
 ```
 
-Set the following environment variables:
-
-- `AWS_ACCOUNT_ID`
 
 ## License
 

@@ -40,3 +40,7 @@ push:
 	@COMMIT_HASH=$(shell git rev-parse HEAD)
 	@podman build --no-cache --build-arg gitsha=$(COMMIT_HASH) -f Dockerfile -t ecr-proxy
 	@podman push ecr-proxy $(TARGET)
+
+helm-docs:
+	@echo "Generating Helm documentation..."
+	helm-docs -f ./README.md.gotmpl

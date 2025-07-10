@@ -1,0 +1,65 @@
+suite: test ingress
+templates:
+- ingress.yaml
+release:
+  name: test-release
+  namespace: test-namespace
+tests:
+- it: manifest should match snapshot
+  chart:
+    version: 1.2.3
+  set:
+    ingress:
+      enabled: true
+  asserts:
+  - matchSnapshot: {}
+
+
+
+
+- it: should add annotations
+  set:
+    ingress:
+      enabled: true
+      annotations:
+        foo: bar
+  asserts:
+  - equal:
+      path: metadata.annotations.foo
+      value: bar
+
+
+- it: should set tls if given
+  set:
+    ingress:
+      enabled: true
+      tls:  true
+      existingSecret: my-tls-secret
+      path: /test
+      pathType: ImplementationSpecific
+  asserts:
+  - equal:
+      path: spec.tls
+      value:
+      - hosts:
+        - chart-example.local
+        secretName: my-tls-secret
+  - equal:
+      path: spec.rules[0].http.paths[0].path
+      value: /test
+  - equal:
+      path: spec.rules[0].http.paths[0].pathType
+      value: ImplementationSpecific
+
+
+
+- it: should set ingressClassName
+  set:
+    ingress:
+      enabled: true
+      ingressClassName: test
+  asserts:
+  - equal:
+      path: spec.ingressClassName
+      value: test
+

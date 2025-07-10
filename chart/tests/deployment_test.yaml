@@ -1,0 +1,283 @@
+---
+suite: test deployment
+templates:
+- deployment.yaml
+tests:
+- it: manifest should match snapshot
+  chart:
+    version: 1.2.3
+  asserts:
+  - matchSnapshot: {}
+
+- it: should set replica count
+  set:
+    replicaCount: 42
+  asserts:
+  - hasDocuments:
+      count: 1
+  - isKind:
+      of: Deployment
+  - isAPIVersion:
+      of: apps/v1
+  - equal:
+      path: spec.replicas
+      value: 42
+
+- it: should not set replica if autoscaling is enabled
+  set:
+    autoscaling:
+      enabled: true
+  asserts:
+  - notExists:
+      path: spec.replicas
+
+
+- it: should add imagePullSecrets
+  set:
+    imagePullSecrets:
+    - name: "docker-secret-1"
+    - name: "docker-secret-2"
+  asserts:
+  - equal:
+      path: spec.template.spec.imagePullSecrets[0].name
+      value: docker-secret-1
+  - equal:
+      path: spec.template.spec.imagePullSecrets[1].name
+      value: docker-secret-2
+
+
+- it: should override image
+  set:
+    image:
+      repository: registry.local/test/ecr-proxy-go
+      tag: 1.2.3
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].image
+      value: registry.local/test/ecr-proxy-go:1.2.3
+
+
+- it: should set resourceSettings
+  set:
+    resources:
+      limits:
+        cpu: "2"
+        memory: "4"
+        ephemeral-storage: "42G"
+      requests:
+        cpu: "1"
+        memory: "2"
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].resources
+      value:
+        limits:
+          cpu: "2"
+          ephemeral-storage: 42G
+          memory: "4"
+        requests:
+          cpu: "1"
+          memory: "2"
+
+
+- it: should add podSecurityContext
+  set:
+    podSecurityContext:
+      runAsUser: 6666
+      runAsGroup: 6666
+      fsGroup: 6666
+      seLinuxOptions: s0:c123,c456
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+  asserts:
+  - equal:
+      path: spec.template.spec.securityContext.runAsUser
+      value: 6666
+  - equal:
+      path: spec.template.spec.securityContext.runAsUser
+      value: 6666
+  - equal:
+      path: spec.template.spec.securityContext.fsGroup
+      value: 6666
+  - equal:
+      path: spec.template.spec.securityContext.seLinuxOptions
+      value: s0:c123,c456
+  - equal:
+      path: spec.template.spec.securityContext.readOnlyRootFilesystem
+      value: true
+  - equal:
+      path: spec.template.spec.securityContext.allowPrivilegeEscalation
+      value: false
+  - equal:
+      path: spec.template.spec.securityContext.runAsNonRoot
+      value: true
+  - equal:
+      path: spec.template.spec.securityContext.seccompProfile.type
+      value: RuntimeDefault
+
+
+
+- it: should add containerSecurityContext from custom  Values
+  set:
+    containerSecurityContext:
+      allowPrivilegeEscalation: test
+      readOnlyRootFilesystem: test
+      seLinuxOptions: s0:c123,c456
+      capabilities:
+        add: ["NET_ADMIN", "SYS_TIME"]
+        drop: ["MKNOD"]
+
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+      value: test
+  - equal:
+      path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+      value: test
+  - equal:
+      path: spec.template.spec.containers[0].securityContext.seLinuxOptions
+      value: s0:c123,c456
+  - contains:
+      path: spec.template.spec.containers[0].securityContext.capabilities.drop
+      content: MKNOD
+
+
+
+- it: should add extraEnvVars
+  set:
+    extraEnvVars:
+    - name: EXTRA_ENV
+      value: test
+    - name: EXTRA_ENV_CM
+      valueFrom:
+        configMapKeyRef:
+          name: cm-example
+          key: cm-key
+    - name: EXTRA_ENV_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: secret-example
+          key: secret-key
+  asserts:
+  - contains:
+      path: spec.template.spec.containers[0].env
+      content:
+        name: EXTRA_ENV
+        value: test
+  - contains:
+      path: spec.template.spec.containers[0].env
+      content:
+        name: EXTRA_ENV_CM
+        valueFrom:
+          configMapKeyRef:
+            name: cm-example
+            key: cm-key
+  - contains:
+      path: spec.template.spec.containers[0].env
+      content:
+        name: EXTRA_ENV_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: secret-example
+            key: secret-key
+
+
+- it: should add label
+  set:
+    extraLabels:
+      foo: bar
+  asserts:
+  - equal:
+      path: metadata.labels.foo
+      value: bar
+  - equal:
+      path: spec.template.metadata.labels.foo
+      value: bar
+
+
+- it: should add nodeSelector
+  set:
+    nodeSelector:
+      beta.kubernetes.io/os: linux
+  asserts:
+  - equal:
+      path: spec.template.spec.nodeSelector["beta.kubernetes.io/os"]
+      value: linux
+
+- it: should add affinity
+  set:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: arch
+              operator: In
+              values:
+              - x86_64
+  asserts:
+  - equal:
+      path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0]
+      value: x86_64
+
+
+- it: should add tolerations
+  set:
+    tolerations:
+    - key: "test"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 6000
+  asserts:
+  - equal:
+      path: spec.template.spec.tolerations[0].key
+      value: test
+
+
+
+- it: should add topologySpreadConstraints
+  set:
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          foo: bar
+  asserts:
+  - equal:
+      path: spec.template.spec.topologySpreadConstraints[0].labelSelector.matchLabels.foo
+      value: bar
+
+
+- it: should override priorityClassName with .chart
+  set:
+    priorityClassName: test
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: test
+
+
+- it: should set imagePullPolicy
+  set:
+    image:
+      pullPolicy: Always
+  asserts:
+  - equal:
+      path: spec.template.spec.containers[0].imagePullPolicy
+      value: Always
+
+- it: should set serviceAccountName
+  set:
+    serviceAccount:
+      create: true
+      name: "test-sa"
+  asserts:
+  - equal:
+      path: spec.template.spec.serviceAccountName
+      value: test-sa
