@@ -2,6 +2,13 @@
 
 All notable changes are documented in this file
 
+## 0.0.6
+
+- remove self signed tls creation
+- better logs
+- add depepndabot
+- vars simplification
+
 ## 0.0.5
 
 - improve tls config
