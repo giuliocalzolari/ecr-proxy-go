@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.service.name }}
   labels:
     {{- include "ecr-proxy.labels" . | nindent 4 }}
-  anotations:
+  annotations:
     {{- with .Values.service.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
