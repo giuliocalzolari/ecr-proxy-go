@@ -1,14 +1,9 @@
 package main
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
+	"context"
+	"encoding/json"
 	"log"
-	"math/big"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -21,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/sethvargo/go-envconfig"
 )
 
 const (
@@ -30,40 +26,45 @@ const (
 
 var (
 	awsRegion   string
-	awsAccount  string
 	ecrEndpoint string
 	ecrToken    string
 	tokenExpiry time.Time
 )
 
+type sysConfig struct {
+	Target      string `env:"ECR_TARGET"`
+	Region      string `env:"AWS_REGION, default=us-east-1"`
+	Account     string `env:"AWS_ACCOUNT_ID"`
+	IpWhitelist string `env:"IP_WHITELIST, default="`
+	TlsCertFile string `env:"TLS_CERT_FILE, default=/app/tls/tls.crt"`
+	TlsKeyFile  string `env:"TLS_KEY_FILE, default=/app/tls/tls.key"`
+}
+
 func main() {
-	// Load configuration
-	ecrTarget := os.Getenv("ECR_TARGET")
-	if ecrTarget != "" {
-		ecrEndpoint = ecrTarget
+	cfg := sysConfig{}
+	ctx := context.Background()
+	if err := envconfig.Process(ctx, &cfg); err != nil {
+		log.Fatalf("%v", err)
+	}
+	if cfg.Target != "" {
+		ecrEndpoint = cfg.Target
 		// Try to extract region from ECR_TARGET if possible
-		parts := strings.Split(ecrTarget, ".")
+		parts := strings.Split(cfg.Target, ".")
 		// ECR endpoint format: <account>.dkr.ecr.<region>.amazonaws.com
 		if len(parts) >= 6 && parts[2] == "ecr" {
-			awsRegion = parts[3]
-			awsAccount = parts[0]
-			log.Printf("Using ECR_TARGET: %s, AWS Region: %s, AWS Account: %s", ecrEndpoint, awsRegion, awsAccount)
+			cfg.Region = parts[3]
+			cfg.Account = parts[0]
+			log.Printf("Using ECR_TARGET: %s, AWS Region: %s, AWS Account: %s", ecrEndpoint, cfg.Region, cfg.Account)
 		} else {
-			log.Fatalf("Invalid ECR_TARGET format: %s", ecrTarget)
+			log.Fatalf("Invalid ECR_TARGET format: %s", cfg.Target)
 		}
 
 	} else {
-		awsRegion = os.Getenv("AWS_REGION")
-		if awsRegion == "" {
-			awsRegion = "us-east-1" // Default region if not set
-			log.Printf("AWS_REGION not set, using default: %s", awsRegion)
-		}
 
-		awsAccount = os.Getenv("AWS_ACCOUNT_ID")
-		if awsAccount == "" {
+		if cfg.Account == "" {
 			// Try to get AWS account ID from STS if not set
 			sess, err := session.NewSession(&aws.Config{
-				Region: aws.String(awsRegion),
+				Region: aws.String(cfg.Region),
 			})
 			if err != nil {
 				log.Fatalf("Failed to create AWS session: %v", err)
@@ -73,18 +74,18 @@ func main() {
 			if err != nil || idResp.Account == nil {
 				log.Fatal("AWS_ACCOUNT_ID environment variable is required and could not be determined via STS")
 			}
-			awsAccount = *idResp.Account
-			log.Printf("AWS_ACCOUNT_ID not set, using value from STS: %s", awsAccount)
+			cfg.Account = *idResp.Account
+			log.Printf("AWS_ACCOUNT_ID not set, using value from STS: %s", cfg.Account)
 		}
-		ecrEndpoint = awsAccount + ".dkr.ecr." + awsRegion + ".amazonaws.com"
+		ecrEndpoint = cfg.Account + ".dkr.ecr." + cfg.Region + ".amazonaws.com"
 	}
 
-	if _, err := refreshECRToken(); err != nil {
+	if _, err := refreshECRToken(cfg); err != nil {
 		log.Fatalf("Initial token refresh failed: %v", err)
 	}
 
 	// Set up the reverse proxy
-	target, _ := url.Parse("https://" + ecrEndpoint)
+	target, _ := url.Parse("https://" + cfg.Target)
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	proxy.Director = director
 
@@ -94,21 +95,23 @@ func main() {
 	// Set up routes
 	http.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
 		// Check IP whitelist if set
-		ipWhitelist := os.Getenv("IP_WHITELIST")
-		if ipWhitelist != "" {
-			allowed := isIPAllowed(r.RemoteAddr, ipWhitelist)
+		if cfg.IpWhitelist != "" {
+			allowed := isIPAllowed(r.RemoteAddr, cfg.IpWhitelist)
 			if !allowed {
-				log.Printf("Denied request from IP %s (not in whitelist)", r.RemoteAddr)
+				LogEntry(r, "Denied request from IP (not in whitelist)")
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
 		}
 
-		log.Printf("Proxying request: %s %s", r.Method, r.URL.Path)
+		if r.URL.Path != "/v2/" {
+			LogEntry(r, "Proxying request to ECR")
+
+		}
 		// Refresh token if needed
 		if time.Now().After(tokenExpiry) {
 			log.Println("ECR token expired or about to expire, refreshing...")
-			if _, err := refreshECRToken(); err != nil {
+			if _, err := refreshECRToken(cfg); err != nil {
 				log.Printf("Failed to refresh ECR token: %v", err)
 				http.Error(w, "Failed to refresh ECR token", http.StatusInternalServerError)
 				return
@@ -125,24 +128,28 @@ func main() {
 	})
 
 	// TLS configuration
-	certFile := os.Getenv("TLS_CERT_FILE")
-	keyFile := os.Getenv("TLS_KEY_FILE")
-	if certFile == "" {
-		certFile = "server.crt" // Default certificate file
-	}
-	if keyFile == "" {
-		keyFile = "server.key" // Default key file
-	}
+	certFile := cfg.TlsCertFile
+	keyFile := cfg.TlsKeyFile
 	if _, err := os.Stat(certFile); os.IsNotExist(err) {
-		log.Printf("TLS cert file not found, generating self-signed certificate at %s and %s", certFile, keyFile)
-		err := generateSelfSignedCert(certFile, keyFile)
-		if err != nil {
-			log.Fatalf("Failed to generate self-signed certificate: %v", err)
-		}
+		log.Fatalf("TLS cert file not found %s and %s", certFile, keyFile)
 	}
 
 	log.Printf("Starting HTTPS ECR proxy on port %s for %s", port, ecrEndpoint)
 	log.Fatal(http.ListenAndServeTLS(":"+port, certFile, keyFile, nil))
+}
+
+func LogEntry(r *http.Request, msg string) {
+	// Log the request details
+	logEntry := map[string]interface{}{
+		"msg":    msg,
+		"method": r.Method,
+		"path":   r.URL.Path,
+		"remote": r.RemoteAddr,
+		"time":   time.Now().Format(time.RFC3339),
+	}
+	logData, _ := json.Marshal(logEntry)
+	log.Println(string(logData))
+
 }
 
 func isIPAllowed(remoteAddr, ipWhitelist string) bool {
@@ -209,77 +216,6 @@ func splitAndTrim(s, sep string) []string {
 	return result
 }
 
-func generateSelfSignedCert(certFile, keyFile string) error {
-	log.Printf("Generating self-signed certificate at %s and %s", certFile, keyFile)
-
-	// Generate private key
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return err
-	}
-
-	// Create certificate template
-	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	if err != nil {
-		return err
-	}
-
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization: []string{"Self-Signed Certificate"},
-			CommonName:   "localhost",
-		},
-		// DNSNames:              []string{"localhost"},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-
-	// Create self-signed certificate
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return err
-	}
-
-	// Create certificate file
-	certOut, err := os.Create(certFile)
-	if err != nil {
-		return err
-	}
-	defer certOut.Close()
-
-	if err := pem.Encode(certOut, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: derBytes,
-	}); err != nil {
-		return err
-	}
-
-	// Create key file
-	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	defer keyOut.Close()
-
-	privBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
-	if err != nil {
-		return err
-	}
-
-	if err := pem.Encode(keyOut, &pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: privBytes,
-	}); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func director(req *http.Request) {
 	// Update request to point to ECR
 	req.URL.Scheme = "https"
@@ -290,10 +226,10 @@ func director(req *http.Request) {
 	req.Header.Set("Authorization", "Basic "+ecrToken)
 }
 
-func refreshECRToken() (string, error) {
+func refreshECRToken(cfg sysConfig) (string, error) {
 	// Create AWS session
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion),
+		Region: aws.String(cfg.Region),
 	})
 	if err != nil {
 		return "", err
@@ -302,7 +238,7 @@ func refreshECRToken() (string, error) {
 	// Get ECR authorization token
 	svc := ecr.New(sess)
 	result, err := svc.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{
-		RegistryIds: []*string{aws.String(awsAccount)},
+		RegistryIds: []*string{aws.String(cfg.Account)},
 	})
 	if err != nil {
 		return "", err
