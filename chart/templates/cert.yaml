@@ -1,0 +1,25 @@
+{{- $name := printf "%s-tls" (include "ecr-proxy.fullname" .) }}
+{{- $secretName := printf "%s-tls" $name | trunc 63 | trimSuffix "-" }}
+{{- $ca := genCA "ecr-proxy-ca" 3650 }}
+{{- $svcName := .Values.service.name }}
+{{- $altNames := list }}
+{{- $cert := genSignedCert $svcName nil $altNames 3650 $ca }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "ecr-proxy.name" . }}-tls
+  labels:
+    {{- include "ecr-proxy.labels" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  {{- $cert_secret := lookup "v1" "Secret" .Release.Namespace $name }}
+  {{- if $cert_secret }}
+  tls.crt: {{ index $cert_secret.data "tls.crt" | quote }}
+  tls.key: {{ index $cert_secret.data "tls.key" | quote }}
+  ca.crt: {{ index $cert_secret.data "ca.crt" | quote }}
+  {{- else }}
+  tls.crt: {{ $cert.Cert | b64enc | quote }}
+  tls.key: {{ $cert.Key | b64enc | quote }}
+  ca.crt: {{ $ca.Cert | b64enc | quote }}
+  {{- end }}

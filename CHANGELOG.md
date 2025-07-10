@@ -2,6 +2,12 @@
 
 All notable changes are documented in this file
 
+## 0.0.5
+
+- improve tls config
+- add example yaml
+- ecr autodiscovery
+
 ## 0.0.4
 
 - add whitelist

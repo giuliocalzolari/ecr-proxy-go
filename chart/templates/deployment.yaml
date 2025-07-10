@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "ecr-proxy.fullname" . }}
+  name: {{ template "ecr-proxy.name" . }}
   labels:
     {{- include "ecr-proxy.labels" . | nindent 4 }}
 spec:
@@ -29,7 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: {{ template "ecr-proxy.fullname" . }}
+      - name: app
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
@@ -51,6 +51,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: TLS_CERT_FILE
+          value: /app/tls/tls.crt
+        - name: TLS_KEY_FILE
+          value: /app/tls/tls.key
         {{- if .Values.ipWhitelist  }}
         - name: IP_WHITELIST
           value: {{ .Values.ipWhitelist | join "," | quote }}
@@ -69,6 +73,7 @@ spec:
           httpGet:
             path: /v2/
             port: {{ .Values.service.port }}
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 2
@@ -77,10 +82,20 @@ spec:
           httpGet:
             path: /
             port: {{ .Values.service.port }}
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 2
           failureThreshold: 3
+        volumeMounts:
+          - name: tls
+            mountPath: /app/tls
+            readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ template "ecr-proxy.name" . }}-tls
+
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
