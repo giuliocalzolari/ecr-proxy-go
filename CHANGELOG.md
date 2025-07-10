@@ -2,6 +2,10 @@
 
 All notable changes are documented in this file
 
+## 0.0.7
+
+- file restructure
+
 ## 0.0.6
 
 - remove self signed tls creation
