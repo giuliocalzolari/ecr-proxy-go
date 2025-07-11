@@ -15,6 +15,7 @@ import (
 	"github.com/giuliocalzolari/ecr-proxy/internal/logx"
 	"github.com/giuliocalzolari/ecr-proxy/internal/tls"
 	"github.com/giuliocalzolari/ecr-proxy/internal/token"
+	"github.com/giuliocalzolari/ecr-proxy/internal/userauth"
 	"github.com/giuliocalzolari/ecr-proxy/internal/utils"
 	"github.com/sethvargo/go-envconfig"
 )
@@ -28,6 +29,8 @@ type sysConfig struct {
 	Region      string `env:"AWS_REGION, default=us-east-1"`
 	Account     string `env:"AWS_ACCOUNT_ID"`
 	IpWhitelist string `env:"IP_WHITELIST, default="`
+	UserAuth    bool   `env:"USER_AUTH, default=false"`      // Enable user authentication
+	UserAuthDb  string `env:"USER_AUTH_DB, default=db.json"` // Path to user authentication database
 	TlsCertFile string `env:"TLS_CERT_FILE, default=/tmp/tls.crt"`
 	TlsKeyFile  string `env:"TLS_KEY_FILE, default=/tmp/tls.key"`
 	Port        string `env:"PORT, default=5000"`
@@ -35,6 +38,8 @@ type sysConfig struct {
 
 func main() {
 	cfg := sysConfig{}
+	err := error(nil)
+	lauth := &userauth.LocalAuth{}
 	ctx := context.Background()
 	if err := envconfig.Process(ctx, &cfg); err != nil {
 		log.Fatalf("%v", err)
@@ -57,6 +62,14 @@ func main() {
 		log.Printf("AWS_ACCOUNT_ID not set, using value from STS: %s", cfg.Account)
 	}
 
+	if cfg.UserAuth {
+		log.Println("User authentication is enabled")
+		lauth, err = userauth.NewLocalAuth(cfg.UserAuthDb)
+		if err != nil {
+			log.Fatalf("Failed to load user authentication database: %v", err)
+		}
+	}
+
 	t := token.NewToken(cfg.Region, cfg.Account)
 
 	target, _ := url.Parse("https://" + t.GetEndpoint())
@@ -75,6 +88,16 @@ func main() {
 			if !allowed {
 				logx.Print(r, "Denied request from IP (not in whitelist)")
 				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+		}
+
+		if cfg.UserAuth {
+			// Check for user authentication
+			username, password, ok := r.BasicAuth()
+			if !ok || !lauth.IsValid(username, password) {
+				logx.Print(r, "Unauthorized access attempt")
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 		}
@@ -102,4 +125,9 @@ func main() {
 
 	log.Printf("Starting HTTPS ECR proxy on port %s for %s", cfg.Port, t.GetEndpoint())
 	log.Fatal(http.ListenAndServeTLS(":"+cfg.Port, cfg.TlsCertFile, cfg.TlsKeyFile, nil))
+}
+
+func dumpRequest(r *http.Request) {
+	dump, _ := httputil.DumpRequest(r, true)
+	log.Println(string(dump))
 }

@@ -61,3 +61,23 @@ Create the name of the service account to use
 {{- end -}}
 
 
+
+
+{{/*
+Lookup a secret value by name and key.
+{{ include "ecr-proxy.secretLookup" ( dict  "src" .Values.password "default" (randAlphaNum 10) "secretName" "your-secret-name" "key" "your-secret-key" "ns" "your-ns" ) }}
+*/}}
+{{- define "ecr-proxy.secretLookup" -}}
+{{- $sec := .src | default .default -}}
+{{- $existingSecret := (lookup "v1" "Secret" .ns .secretName ) -}}
+{{- if $existingSecret  -}}
+    {{- if (hasKey $existingSecret.data .key)  -}}
+        {{- $sec1 := index $existingSecret.data .key | b64dec -}}
+        {{/* "(empty .src)" is when the user supply manually the input */}}
+        {{- if (empty .src) -}}
+            {{- $sec = $sec1 -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+{{- $sec -}}
+{{- end -}}

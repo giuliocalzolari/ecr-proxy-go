@@ -1,0 +1,31 @@
+manifest should match snapshot:
+  1: |
+    apiVersion: v1
+    data:
+      userdb: W3sicGFzc3dvcmQiOiJnVUJrbE56Uno3bkFxYmdjIiwidXNlcm5hbWUiOiJhZG1pbiJ9XQ==
+    kind: Secret
+    metadata:
+      labels:
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: ecr-proxy
+        app.kubernetes.io/version: 0.0.0
+        helm.sh/chart: ecr-proxy-1.2.3
+      name: ecr-proxy-userdb
+    type: opaque
+  2: |
+    apiVersion: v1
+    data:
+      password: Z1VCa2xOelJ6N25BcWJnYw==
+      username: YWRtaW4=
+    kind: Secret
+    metadata:
+      annotations:
+        description: cred for admin
+      labels:
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: ecr-proxy
+        app.kubernetes.io/version: 0.0.0
+        helm.sh/chart: ecr-proxy-1.2.3
+      name: ecr-proxy-userdb-admin

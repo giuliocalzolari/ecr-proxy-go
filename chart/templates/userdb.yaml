@@ -1,0 +1,44 @@
+{{ if .Values.userAuth.enabled }}
+{{- $dbauth := list -}}
+{{- $secName := printf "%s-userdb" (include "ecr-proxy.name" .) }}
+{{- $db_secret := lookup "v1" "Secret" .Release.Namespace $secName }}
+{{- if $db_secret }}
+{{ $dbauth := $db_secret.data.userdb }}
+{{- else }}
+{{- $passwd := (include "ecr-proxy.secretLookup" ( dict  "src" .Values.userAuth.adminPassword "secretName" (printf "%s-%s" $secName .Values.userAuth.adminUsername) "key" "password" "default" (randAlphaNum 16) "ns" $.Release.Namespace) ) -}}
+{{- $data := dict  "username" .Values.userAuth.adminUsername "password" $passwd -}}
+{{- $dbauth = append $dbauth $data -}}
+{{- range $v := .Values.userAuth.items -}}
+  {{- $passwd := (include "ecr-proxy.secretLookup" ( dict  "src" $v.password "secretName" (printf "%s-%s" $secName $v.username) "key" "password" "default" (randAlphaNum 16) "ns" $.Release.Namespace) ) -}}
+  {{- $data := dict "password" $passwd  "username" $v.username -}}
+  {{- $dbauth = append $dbauth $data -}}
+{{- end -}}
+{{- end }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secName }}
+  labels:
+    {{- include "ecr-proxy.labels" . | nindent 4 }}
+type: opaque
+data:
+  userdb: {{ $dbauth | toJson | b64enc | quote }}
+
+{{ range $k, $v := $dbauth }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ printf "%s-%s" $secName $v.username }}
+  annotations:
+    description: cred for {{ $v.username }}
+  labels:
+    {{- include "ecr-proxy.labels" $ | nindent 4 }}
+data:
+  username: {{ $v.username | b64enc }}
+  password: {{ $v.password | b64enc }}
+{{- end }}
+{{- end }}
+

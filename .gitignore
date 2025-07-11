@@ -25,3 +25,4 @@ server.key
 tmp/
 app
 all.yaml
+db.json

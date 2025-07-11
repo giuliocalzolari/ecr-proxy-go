@@ -1,0 +1,70 @@
+suite: test UserDB
+templates:
+- userdb.yaml
+release:
+  name: test-release
+  namespace: test-namespace
+kubernetesProvider:
+  scheme:
+    "v1/Secret":
+      gvr:
+        version: "v1"
+        resource: "secrets"
+      namespaced: true
+tests:
+- it: manifest should match snapshot
+  chart:
+    version: 1.2.3
+  set:
+    userAuth:
+      enabled: true
+  asserts:
+  - matchSnapshot: {}
+
+- it: should generated admin password
+  documentSelector:
+    path: metadata.name
+    value: ecr-proxy-userdb-admin
+  asserts:
+  - equal:
+      path: data.username
+      value: admin
+      decodeBase64: true
+  - matchRegex:
+      path: data.password
+      pattern: ^[a-zA-Z0-9]{16}$
+      decodeBase64: true
+
+- it: should set admin password
+  documentSelector:
+    path: metadata.name
+    value: ecr-proxy-userdb-admin
+  set:
+    userAuth:
+      adminPassword: "test"
+  asserts:
+  - equal:
+      path: data.password
+      value: test
+      decodeBase64: true
+
+
+- it: should read admin password from secret
+  kubernetesProvider:
+    objects:
+      - kind: Secret
+        apiVersion: v1
+        metadata:
+          name: ecr-proxy-userdb-admin
+          namespace: test-namespace
+        data:
+          password: dGVzdAo=
+  documentSelector:
+    path: metadata.name
+    value: ecr-proxy-userdb-admin
+  asserts:
+  - equal:
+      path: data.password
+      value: test
+      decodeBase64: true
+
