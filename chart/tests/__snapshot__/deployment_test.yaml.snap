@@ -52,7 +52,7 @@ manifest should match snapshot:
               livenessProbe:
                 failureThreshold: 3
                 httpGet:
-                  path: /v2/
+                  path: /healthz
                   port: 5000
                   scheme: HTTPS
                 initialDelaySeconds: 10
@@ -66,7 +66,7 @@ manifest should match snapshot:
               readinessProbe:
                 failureThreshold: 3
                 httpGet:
-                  path: /
+                  path: /readyz
                   port: 5000
                   scheme: HTTPS
                 initialDelaySeconds: 5
