@@ -43,4 +43,4 @@ push:
 
 helm-docs:
 	@echo "Generating Helm documentation..."
-	helm-docs -f ./README.md.gotmpl
+	@helm-docs
