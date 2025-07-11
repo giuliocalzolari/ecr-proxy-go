@@ -34,7 +34,6 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         securityContext:
           {{- toYaml .Values.containerSecurityContext | nindent 10 }}
-
         env:
         - name: MY_POD_IP
           valueFrom:
@@ -72,7 +71,7 @@ spec:
           {{- toYaml .Values.resources | nindent 10 }}
         livenessProbe:
           httpGet:
-            path: /v2/
+            path: /healthz
             port: {{ .Values.service.port }}
             scheme: HTTPS
           initialDelaySeconds: 10
@@ -81,7 +80,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /
+            path: /readyz
             port: {{ .Values.service.port }}
             scheme: HTTPS
           initialDelaySeconds: 5
@@ -96,7 +95,6 @@ spec:
         - name: tls
           secret:
             secretName: {{ template "ecr-proxy.name" . }}-tls
-
       {{- with .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}

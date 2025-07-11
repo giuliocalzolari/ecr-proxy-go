@@ -1,4 +1,4 @@
-name: ecr-proxy-helm
+name: ecr-proxy
 apiVersion: v1
 version: 0.0.0 # automatically set by the ci/cd
 appVersion: 0.0.0 # automatically set by the ci/cd

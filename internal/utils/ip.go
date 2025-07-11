@@ -1,46 +1,12 @@
-package main
+package utils
 
 import (
 	"log"
 	"net"
 	"strings"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ecr"
 )
 
-func refreshECRToken(cfg sysConfig) (string, error) {
-	// Create AWS session
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(cfg.Region),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	// Get ECR authorization token
-	svc := ecr.New(sess)
-	result, err := svc.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{
-		RegistryIds: []*string{aws.String(cfg.Account)},
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if len(result.AuthorizationData) == 0 {
-		return "", nil
-	}
-
-	// Update our token and expiry
-	ecrToken = *result.AuthorizationData[0].AuthorizationToken
-	tokenExpiry = result.AuthorizationData[0].ExpiresAt.Add(-tokenRefreshAfter)
-
-	log.Println("Successfully refreshed ECR authorization token")
-	return ecrToken, nil
-}
-
-func isIPAllowed(remoteAddr, ipWhitelist string) bool {
+func IsIPAllowed(remoteAddr, ipWhitelist string) bool {
 	// Split the whitelist into individual CIDRs or IPs
 	whitelist := splitAndTrim(ipWhitelist, ",")
 	var ipNets []*net.IPNet

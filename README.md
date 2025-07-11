@@ -60,9 +60,10 @@ Use [AWS IRSA](https://docs.aws.amazon.com/eks/latest/userguide/associate-servic
 install everything with
 
 ```
-helm upgrade --install ecr-proxy oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -n ecr-proxy --create-namespace --debug -f chart/values-example.yaml
+helm upgrade --install ecr-proxy oci://ghcr.io/giuliocalzolari/ecr-proxy -n ecr-proxy --create-namespace --debug -f chart/values-example.yaml
 ```
 
+for extra info on helm values [read here](chart/README.md)
 
 ## License
 
