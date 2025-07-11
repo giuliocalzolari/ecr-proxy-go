@@ -1,4 +1,4 @@
-# ecr-proxy-helm
+# ecr-proxy
 
 A proxy for ECR that handles authentication and caching
 
@@ -7,19 +7,19 @@ A proxy for ECR that handles authentication and caching
 A simple install with default values:
 
 ```console
-helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm
+helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy
 ```
 
 To install with some set values:
 
 ```console
-helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm --set values_key1=value1 --set values_key2=value2
+helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy --set values_key1=value1 --set values_key2=value2
 ```
 
 To install with custom values file:
 
 ```console
-helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -f values.yaml
+helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy -f values.yaml
 ```
 
 ## Values
@@ -40,6 +40,7 @@ helm install my-release oci://ghcr.io/giuliocalzolari/ecr-proxy-helm -f values.y
 | containerSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | extraEnvVars | list | `[]` |  |
 | extraLabels | object | `{}` |  |
+| extraObjects | list | `[]` | Additional objects to deploy |
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/giuliocalzolari/ecr-proxy-go"` |  |

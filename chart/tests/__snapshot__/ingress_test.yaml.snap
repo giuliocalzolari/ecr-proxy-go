@@ -6,10 +6,10 @@ manifest should match snapshot:
       labels:
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/name: ecr-proxy-helm
+        app.kubernetes.io/name: ecr-proxy
         app.kubernetes.io/version: 0.0.0
-        helm.sh/chart: ecr-proxy-helm-1.2.3
-      name: ecr-proxy-helm
+        helm.sh/chart: ecr-proxy-1.2.3
+      name: ecr-proxy
     spec:
       ingressClassName: nginx
       rules:

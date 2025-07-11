@@ -2,6 +2,12 @@
 
 All notable changes are documented in this file
 
+## 0.0.9
+
+- add live and ready endpoint
+- better classes structure
+- rename helm chart
+
 ## 0.0.8
 
 - helm unittest

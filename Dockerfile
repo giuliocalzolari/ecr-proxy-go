@@ -1,9 +1,11 @@
 FROM golang:1.24-alpine AS builder
 WORKDIR /app
+# Copy and download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
-RUN go mod download
-COPY *.go ./
+
+# Copy the source code
+COPY . .
 
 RUN CGO_ENABLED=0 \
     GOOS=linux \

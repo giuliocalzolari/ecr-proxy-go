@@ -1,4 +1,4 @@
-package main
+package logx
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type LogEntry struct {
 	Path       string `json:"path"`
 }
 
-func Log(r *http.Request, msg string) {
+func Print(r *http.Request, msg string) {
 	// Log the request details
 	remoteAddr := r.RemoteAddr
 	host, port, err := net.SplitHostPort(remoteAddr)
