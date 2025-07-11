@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/giuliocalzolari/ecr-proxy/internal/logx"
+	"github.com/giuliocalzolari/ecr-proxy/internal/tls"
 	"github.com/giuliocalzolari/ecr-proxy/internal/token"
 	"github.com/giuliocalzolari/ecr-proxy/internal/utils"
 	"github.com/sethvargo/go-envconfig"
@@ -27,8 +28,8 @@ type sysConfig struct {
 	Region      string `env:"AWS_REGION, default=us-east-1"`
 	Account     string `env:"AWS_ACCOUNT_ID"`
 	IpWhitelist string `env:"IP_WHITELIST, default="`
-	TlsCertFile string `env:"TLS_CERT_FILE, default=/app/tls/tls.crt"`
-	TlsKeyFile  string `env:"TLS_KEY_FILE, default=/app/tls/tls.key"`
+	TlsCertFile string `env:"TLS_CERT_FILE, default=/tmp/tls.crt"`
+	TlsKeyFile  string `env:"TLS_KEY_FILE, default=/tmp/tls.key"`
 	Port        string `env:"PORT, default=5000"`
 }
 
@@ -96,7 +97,7 @@ func main() {
 	})
 
 	if _, err := os.Stat(cfg.TlsCertFile); os.IsNotExist(err) {
-		log.Fatalf("TLS cert file not found %s and %s", cfg.TlsCertFile, cfg.TlsKeyFile)
+		tls.Generate(cfg.TlsCertFile, cfg.TlsKeyFile)
 	}
 
 	log.Printf("Starting HTTPS ECR proxy on port %s for %s", cfg.Port, t.GetEndpoint())
