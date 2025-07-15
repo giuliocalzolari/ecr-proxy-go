@@ -49,16 +49,9 @@ jobs:
           docker build -t ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA .
           docker image list | grep $GITHUB_REPOSITORY
 
-
       - name: release
         if: github.event.pull_request.merged == true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker image tag ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA ghcr.io/$GITHUB_REPOSITORY:$IMAGEVERSION
-          docker push ghcr.io/$GITHUB_REPOSITORY:$IMAGEVERSION
-
           set -e; awk 'NR==2 {print RT,$0}' RS="## [v|0-9]" OFS="" CHANGELOG.md > release_description.md
           cat release_description.md
           echo $IMAGEVERSION
@@ -73,4 +66,5 @@ jobs:
           version: '~> v2'
           args: release --clean --release-notes release_description.md
         env:
+          GITHUB_ORG: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
