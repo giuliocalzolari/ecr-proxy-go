@@ -77,9 +77,8 @@ jobs:
         if: github.event.pull_request.merged == false
         uses: goreleaser/goreleaser-action@v6          # run goreleaser
         with:
-          install-only: true
           version: '~> v2'
-          args: release --clean  --skip=publish
+          args: build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
