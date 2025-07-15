@@ -15,7 +15,8 @@ ENV PROXY_PORT=5000
 # Expose HTTPS port
 EXPOSE ${PROXY_PORT}
 
-
+ARG gitsha
+LABEL org.opencontainers.image.revision="${gitsha}"
 LABEL org.opencontainers.image.description="ECR Proxy for AWS ECR"
 LABEL org.opencontainers.image.url="github.com/giuliocalzolari/ecr-proxy"
 ENTRYPOINT ["/app/ecr-proxy"]
