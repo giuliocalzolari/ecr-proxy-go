@@ -45,9 +45,10 @@ jobs:
           .github/scripts/validate.sh
 
       - name: build
+        if: github.event.pull_request.merged == false
         run: |
           docker build -t ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA .
-          docker image list | grep $GITHUB_REPOSITORY
+          docker image list
 
 
       - name: release
