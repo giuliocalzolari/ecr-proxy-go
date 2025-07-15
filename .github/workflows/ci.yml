@@ -45,7 +45,6 @@ jobs:
           .github/scripts/validate.sh
 
       - name: build
-        if: github.event.pull_request.merged == false
         run: |
           docker build -t ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA .
           docker image list
@@ -58,7 +57,9 @@ jobs:
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker image tag ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA ghcr.io/$GITHUB_REPOSITORY:$IMAGEVERSION
+          docker image tag ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA ghcr.io/$GITHUB_REPOSITORY:latest
           docker push ghcr.io/$GITHUB_REPOSITORY:$IMAGEVERSION
+          docker push ghcr.io/$GITHUB_REPOSITORY:latest
 
           set -e; awk 'NR==2 {print RT,$0}' RS="## [v|0-9]" OFS="" CHANGELOG.md > release_description.md
           cat release_description.md
