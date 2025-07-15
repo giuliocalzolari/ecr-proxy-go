@@ -46,7 +46,6 @@ jobs:
 
 
       - name: release-notes
-        if: github.event.pull_request.merged == true
         run: |
           set -e; awk 'NR==2 {print RT,$0}' RS="## [v|0-9]" OFS="" CHANGELOG.md > release_description.md
           cat release_description.md
@@ -78,7 +77,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6          # run goreleaser
         with:
           version: '~> v2'
-          args: build
+          args: build --clean --skip=publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
