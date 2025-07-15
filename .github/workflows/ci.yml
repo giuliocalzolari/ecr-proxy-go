@@ -77,7 +77,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6          # run goreleaser
         with:
           version: '~> v2'
-          args: build --clean --skip=publish
+          args: build --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
