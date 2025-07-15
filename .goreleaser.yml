@@ -1,17 +1,27 @@
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
 builds:
-- binary: ecr-proxy
+- id: app_targz
+  binary: ecr-proxy
   goos:
   - linux
   - darwin
   goarch:
   - amd64
+
+
 archives:
-- name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
-  format: binary
+  - id: targz
+    ids: ["app_targz"]
+    formats:
+     - tar.gz
+     - binary
 
 checksum:
-  name_template: "checksums.txt"
-
+  name_template: "{{ .ProjectName }}_checksums.txt"
 
 dockers:
   # https://goreleaser.com/customization/docker/
