@@ -49,6 +49,7 @@ jobs:
           docker build -t ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA .
           docker image list | grep $GITHUB_REPOSITORY
 
+
       - name: release
         if: github.event.pull_request.merged == true
         run: |
@@ -60,11 +61,22 @@ jobs:
           git config --global user.name "autobump"
           git tag $IMAGEVERSION
 
+
+      - name: setup-qemu
+        if: github.event.pull_request.merged == true
+        uses: docker/setup-qemu-action@v3
+
+      - name: setup-buildx
+        if: github.event.pull_request.merged == true
+        uses: docker/setup-buildx-action@v3
+
       - uses: goreleaser/goreleaser-action@v6          # run goreleaser
         if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
         with:
           version: '~> v2'
           args: release --clean --release-notes release_description.md
         env:
-          GITHUB_ORG: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_USERNAME: ${{ github.actor }}
+          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
