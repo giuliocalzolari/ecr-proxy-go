@@ -76,8 +76,7 @@ jobs:
         if: github.event.pull_request.merged == false
         uses: goreleaser/goreleaser-action@v6          # run goreleaser
         with:
-          version: '~> v2'
-          args: build --clean
+          args: release --clean --skip=publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -86,7 +85,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v6          # run goreleaser
         if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
         with:
-          version: '~> v2'
           args: release --clean --release-notes release_description.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
