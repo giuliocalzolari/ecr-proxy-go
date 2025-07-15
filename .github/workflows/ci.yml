@@ -44,13 +44,8 @@ jobs:
         run: |
           .github/scripts/validate.sh
 
-      - name: build
-        run: |
-          docker build -t ghcr.io/$GITHUB_REPOSITORY:$GITHUB_SHA .
-          docker image list | grep $GITHUB_REPOSITORY
 
-
-      - name: release
+      - name: release-notes
         if: github.event.pull_request.merged == true
         run: |
           set -e; awk 'NR==2 {print RT,$0}' RS="## [v|0-9]" OFS="" CHANGELOG.md > release_description.md
@@ -63,11 +58,9 @@ jobs:
 
 
       - name: setup-qemu
-        if: github.event.pull_request.merged == true
         uses: docker/setup-qemu-action@v3
 
       - name: setup-buildx
-        if: github.event.pull_request.merged == true
         uses: docker/setup-buildx-action@v3
 
       - name: Cache Go Modules
@@ -80,13 +73,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - uses: goreleaser/goreleaser-action@v6          # run goreleaser
+      - name: goreleaser dry run
+        if: github.event.pull_request.merged == false
+        uses: goreleaser/goreleaser-action@v6          # run goreleaser
+        with:
+          version: '~> v2'
+          args: --skip=publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+
+      - name: goreleaser
+        uses: goreleaser/goreleaser-action@v6          # run goreleaser
         if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
         with:
           version: '~> v2'
           args: release --clean --release-notes release_description.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCKER_USERNAME: ${{ github.actor }}
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
