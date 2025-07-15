@@ -8,3 +8,18 @@ builds:
 archives:
 - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
   format: binary
+
+checksum:
+  name_template: "checksums.txt"
+
+dockers:
+  - image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_ORG }}/{{ .ProjectName }}:{{ .Version }}"
+      - "ghcr.io/{{ .Env.GITHUB_ORG }}/{{ .ProjectName }}:latest"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --platform=linux/amd64,linux/arm64
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.revision={{.Commit}}
